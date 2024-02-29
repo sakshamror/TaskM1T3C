@@ -1,48 +1,63 @@
-const int pirPin = 2; // PIR sensor pin
-const int ledPin = 11; // LED pin for motion detection
-const int trigPin = 3; // Ultrasonic sensor trigger pin
-const int echoPin = 4; // Ultrasonic sensor echo pin
-const int newLedPin = 12; // New LED pin for distance measurement
+const int temperatureSensorPin = A0;  // Analog pin for temperature sensor simulation
+const int motionSensorPin = 2;        // Digital pin for motion sensor simulation
+const int ledPinTemperature = 3;      // Digital pin for temperature LED
+const int ledPinMotion = 7;           // Digital pin for motion LED
 
 volatile bool motionDetected = false;
 
 void setup() {
-  pinMode(pirPin, INPUT);
-  pinMode(ledPin, OUTPUT);
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(newLedPin, OUTPUT);
-  
   Serial.begin(9600);
 
-  attachInterrupt(digitalPinToInterrupt(pirPin), motionDetectedISR, CHANGE);
+  pinMode(ledPinTemperature, OUTPUT);
+  pinMode(ledPinMotion, OUTPUT);
+
+  attachInterrupt(digitalPinToInterrupt(motionSensorPin), motionInterrupt, RISING);
 }
 
 void loop() {
-  // Ultrasonic sensor measurement
-  long duration, distance;
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH);
-  distance = (duration / 2) / 29.1; // Distance in centimeters
-  
-  // Check if distance is less than 100cm
-  if (distance < 100) {
-    digitalWrite(newLedPin, HIGH); // Turn on new LED
+  // Simulate temperature reading (adjust the values as needed)
+  int sensorValue = analogRead(temperatureSensorPin);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float temperatureCelsius = (voltage - 0.5) * 100.0;
+
+  Serial.print("Temperature: ");
+  Serial.print(temperatureCelsius);
+  Serial.println(" °C");
+
+  // Check if the temperature is higher than 20 degrees Celsius
+  if (temperatureCelsius > 20.0) {
+    digitalWrite(ledPinTemperature, HIGH);
+    Serial.println("Temperature LED ON");
   } else {
-    digitalWrite(newLedPin, LOW); // Turn off new LED
+    digitalWrite(ledPinTemperature, LOW);
+    Serial.println("Temperature LED OFF");
   }
+
+  // Check if motion is detected
+  if (motionDetected) {
+    handleMotionEvent();
+  }
+
+  delay(1000);
 }
 
-void motionDetectedISR() {
-  if (digitalRead(pirPin) == HIGH) {
-    Serial.println("Motion Detected!");
-    digitalWrite(ledPin, HIGH);
-  } else {
-    Serial.println("Motion Ended!");
-    digitalWrite(ledPin, LOW);
-  }
+void motionInterrupt() {
+  motionDetected = true;
+}
+
+void handleMotionEvent() {
+  // Update the LED for motion sensor
+  digitalWrite(ledPinMotion, HIGH);
+  
+  // Print a message for monitoring
+  Serial.println("Motion Detected!");
+  
+  // Wait for a while to simulate a delay
+  delay(5000);
+  
+  // Turn off the LED for motion sensor after the delay
+  digitalWrite(ledPinMotion, LOW);
+
+  // Reset the motion detection flag
+  motionDetected = false;
 }
